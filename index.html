@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScreenAssist – HCAI Medical Screening Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eef2f5; --panel:#ffffff; --ink:#15212b; --muted:#5b6b78; --line:#d8e0e6;
+    --brand:#0f5c6e; --brand-2:#e6f2f4;
+    --high:#b4232c; --high-bg:#fbeaea;
+    --unc:#9a6400; --unc-bg:#fff4dc;
+    --low:#1f7a4d; --low-bg:#e5f4ec;
+    --warn:#6b3fa0; --warn-bg:#f1eafa;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"IBM Plex Sans",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
+  .proto-bar{background:#1d2a33;color:#cfdbe3;padding:10px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:13px}
+  .proto-bar b{color:#fff;margin-right:6px}
+  .proto-bar button{background:#2c3d48;color:#e3edf3;border:1px solid #3e5361;border-radius:6px;padding:6px 12px;font:inherit;cursor:pointer}
+  .proto-bar button.on{background:#f0c34e;color:#1d2a33;border-color:#f0c34e;font-weight:600}
+  .proto-bar .note{margin-left:auto;opacity:.75}
+  header.app{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 24px;display:flex;align-items:center;gap:16px}
+  .logo{font-weight:700;color:var(--brand);font-size:18px;letter-spacing:-.2px}
+  .logo span{font-weight:400;color:var(--muted);font-size:13px;margin-left:8px}
+  .steps{margin-left:auto;display:flex;gap:6px;font-size:13px}
+  .steps div{padding:5px 12px;border-radius:20px;background:#f1f4f6;color:var(--muted)}
+  .steps div.on{background:var(--brand);color:#fff}
+  main{max-width:1180px;margin:20px auto;padding:0 20px}
+  .grid{display:grid;grid-template-columns:300px 1fr;gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}
+  .card h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600}
+  .pt-name{font-size:20px;font-weight:600;margin:0}
+  .pt-meta{color:var(--muted);font-size:13px;margin:2px 0 12px}
+  dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px}
+  dt{color:var(--muted)} dd{margin:0}
+  .missing{color:var(--unc);font-weight:600}
+  .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:12px;background:#f1f4f6;margin:2px 4px 2px 0}
+  .privacy{margin-top:14px;padding:10px;border-radius:8px;background:#f6f8f9;font-size:12.5px;color:var(--muted)}
+  .result{border-radius:10px;padding:18px;border:2px solid}
+  .result.high{background:var(--high-bg);border-color:var(--high)}
+  .result.unc{background:var(--unc-bg);border-color:var(--unc)}
+  .result.low{background:var(--low-bg);border-color:var(--low)}
+  .result .lbl{font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:600;color:var(--muted)}
+  .result .verdict{font-size:26px;font-weight:700;margin:4px 0}
+  .high .verdict{color:var(--high)} .unc .verdict{color:var(--unc)} .low .verdict{color:var(--low)}
+  .not-dx{font-size:13px;color:var(--muted)}
+  .meter{position:relative;height:30px;margin:22px 0 6px;border-radius:6px;background:linear-gradient(90deg,#cfe9db 0%,#cfe9db 40%,#ffe7b0 40%,#ffe7b0 60%,#f6caca 60%,#f6caca 100%)}
+  .meter .range{position:absolute;top:6px;height:18px;background:rgba(21,33,43,.25);border-radius:4px}
+  .meter .pt{position:absolute;top:-4px;width:4px;height:38px;background:var(--ink);border-radius:2px;transform:translateX(-2px)}
+  .meter .pt span{position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-family:"IBM Plex Mono",monospace;font-size:12px;white-space:nowrap}
+  .scale{position:relative;height:16px;font-size:11.5px;color:var(--muted)}.scale span{position:absolute;transform:translateX(-50%);white-space:nowrap}.scale span:first-child{transform:none}.scale span:last-child{transform:translateX(-100%)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+  .factor{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:14px}
+  .factor .bar{height:8px;border-radius:4px}
+  .factor .up{background:var(--high)} .factor .down{background:var(--low)}
+  .factor .w{width:90px;flex:none;display:flex}
+  .alert{margin-top:18px;border-radius:10px;padding:14px 16px;border-left:5px solid;font-size:14px}
+  .alert .t{display:block;margin-bottom:3px;font-size:14.5px;font-weight:700}
+  .alert.unc{background:var(--unc-bg);border-color:var(--unc)}
+  .alert.warn{background:var(--warn-bg);border-color:var(--warn)}
+  .alert.ok{background:var(--brand-2);border-color:var(--brand)}
+  table.perf{width:100%;border-collapse:collapse;font-size:13.5px}
+  table.perf th,table.perf td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+  table.perf th{color:var(--muted);font-weight:500}
+  table.perf tr.me td{font-weight:600;background:#f6f8f9}
+  .flag{color:var(--warn);font-weight:600}
+  .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+  .btn{font:inherit;border-radius:8px;padding:10px 18px;cursor:pointer;border:1px solid var(--brand);background:#fff;color:var(--brand);font-weight:600}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .opts{display:grid;gap:10px;margin:8px 0 4px}
+  .opt{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:12px;cursor:pointer;background:#fff}
+  .opt:hover{border-color:var(--brand)}
+  .opt.sel{border-color:var(--brand);background:var(--brand-2);box-shadow:0 0 0 1px var(--brand)}
+  .opt input{margin-top:3px}
+  .opt small{display:block;color:var(--muted)}
+  textarea{width:100%;min-height:70px;font:inherit;border:1px solid var(--line);border-radius:8px;padding:10px}
+  .req{color:var(--high);font-size:12.5px;font-weight:600}
+  .chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0}
+  .summary{display:none}
+  .summary.on{display:block}
+  .done{background:var(--low-bg);border:1px solid var(--low);border-radius:10px;padding:18px}
+  .hidden{display:none}
+  .ai-mini{display:flex;gap:14px;align-items:center;padding:12px;border-radius:8px;margin-bottom:12px}
+  .ai-mini.high{background:var(--high-bg)} .ai-mini.unc{background:var(--unc-bg)} .ai-mini.low{background:var(--low-bg)}
+  .ai-mini .v{font-weight:700;font-size:18px}
+  .high .v{color:var(--high)} .unc .v{color:var(--unc)} .low .v{color:var(--low)}
+  @media (max-width:860px){.grid,.row2{grid-template-columns:1fr}.proto-bar .note{margin-left:0}}
+</style>
+</head>
+<body>
+
+<div class="proto-bar">
+  <b>Prototype controls</b> Scenario:
+  <button data-s="1" class="on">1 · Expected</button>
+  <button data-s="2">2 · Uncertain</button>
+  <button data-s="3">3 · Incorrect / potentially unfair</button>
+  <span class="note">Fictional data · simulated AI (no real model)</span>
+</div>
+
+<header class="app">
+  <div class="logo">ScreenAssist <span>AI decision support · Disease X screening</span></div>
+  <div class="steps"><div id="st1" class="on">1 · Review AI result</div><div id="st2">2 · Clinician decision</div></div>
+</header>
+
+<main>
+<!-- ================= SCREEN 1 ================= -->
+<section id="screen1">
+  <div class="grid">
+    <aside class="card">
+      <h3>Patient</h3>
+      <p class="pt-name" id="pName"></p>
+      <p class="pt-meta" id="pMeta"></p>
+      <dl id="pData"></dl>
+      <div style="margin-top:12px" id="pSymptoms"></div>
+      <div class="privacy">🔒 <b>Data used by the AI:</b> age group, vitals, screening labs and coded symptoms only. Name, address and insurance are <b>not</b> sent to the model. Result is visible only to the care team.</div>
+    </aside>
+
+    <div>
+      <div class="card">
+        <div id="result" class="result">
+          <div class="lbl">AI screening suggestion</div>
+          <div class="verdict" id="verdict"></div>
+          <div class="not-dx">This is a risk estimate to support your judgment — <b>not a diagnosis</b>. A confirmatory test is required to diagnose Disease X.</div>
+          <div class="meter"><div class="range" id="range"></div><div class="pt" id="pt"><span id="ptLbl"></span></div></div>
+          <div class="scale"><span style="left:0">0 · Low</span><span style="left:40%">40</span><span style="left:50%;top:0">Inconclusive</span><span style="left:60%">60</span><span style="left:100%">High · 100</span></div>
+          <div style="font-size:13px;margin-top:8px" id="rangeTxt"></div>
+        </div>
+
+        <div class="row2">
+          <div>
+            <h3>Why the AI suggests this</h3>
+            <div id="factors"></div>
+            <p style="font-size:12.5px;color:var(--muted);margin-top:10px">Red = pushes risk up · Green = pushes risk down</p>
+          </div>
+          <div>
+            <h3>How reliable is the AI for this patient group?</h3>
+            <table class="perf" id="perf"></table>
+            <p style="font-size:12.5px;color:var(--muted);margin-top:8px"><b>Catches</b> = share of sick patients the AI flags (recall). <b>Correct when flagged</b> = share of flagged patients who are truly sick (precision). Validation set, fictional.</p>
+          </div>
+        </div>
+
+        <div id="alerts"></div>
+
+        <div class="actions">
+          <button class="btn" onclick="flagIssue()">⚑ Report a problem with this result</button>
+          <button class="btn primary" onclick="go(2)">Continue to my decision →</button>
+        </div>
+        <p id="flagMsg" class="hidden" style="text-align:right;font-size:13px;color:var(--brand)">Thanks — the result was flagged for the AI quality team. It still needs your clinical decision.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SCREEN 2 ================= -->
+<section id="screen2" class="hidden">
+  <div class="grid">
+    <aside class="card">
+      <h3>Summary</h3>
+      <div class="ai-mini" id="mini"><div><div style="font-size:12px;color:var(--muted)">AI suggestion</div><div class="v" id="miniV"></div></div></div>
+      <p class="pt-name" id="pName2" style="font-size:17px"></p>
+      <p class="pt-meta" id="pMeta2"></p>
+      <div id="miniAlerts" style="font-size:13px"></div>
+      <button class="btn" style="margin-top:14px;width:100%" onclick="go(1)">← Back to AI explanation</button>
+    </aside>
+
+    <div class="card">
+      <div id="form">
+        <h3>Your clinical decision</h3>
+        <p style="margin:0 0 6px;font-size:14px">You make the final call. Choose a next step for this patient.</p>
+        <div class="opts" id="opts"></div>
+
+        <div id="whyBox" style="margin-top:14px">
+          <label style="font-weight:600;font-size:14px">Clinical reasoning <span class="req" id="reqTxt"></span></label>
+          <textarea id="why" placeholder="e.g., symptoms and exam findings that support or contradict the AI suggestion"></textarea>
+        </div>
+
+        <div id="checks" style="margin-top:6px"></div>
+
+        <div style="margin-top:12px;padding:12px;background:#f6f8f9;border-radius:8px;font-size:13.5px">
+          <b>Patient communication</b> — <span id="comm"></span>
+        </div>
+
+        <div class="actions">
+          <button class="btn" onclick="go(1)">Cancel</button>
+          <button class="btn primary" id="submit" disabled onclick="submitDecision()">Sign & record decision</button>
+        </div>
+      </div>
+
+      <div class="summary" id="summary">
+        <div class="done">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--low);font-weight:700">Decision recorded</div>
+          <div style="font-size:20px;font-weight:600;margin:4px 0 10px" id="sumTitle"></div>
+          <dl id="sumData"></dl>
+        </div>
+        <p style="font-size:13px;color:var(--muted)">The record shows the AI suggestion and your decision separately. Disagreements with the AI are sent (without patient identifiers) to the quality team to monitor errors and fairness across patient groups.</p>
+        <div class="actions"><button class="btn primary" onclick="reset()">Next patient (restart scenario)</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<script>
+const S = {
+ 1:{ name:"Lucas M.", meta:"Patient #A-1042 · Male · Age group: child (6–12)",
+     data:[["Temperature","38.9 °C"],["Heart rate","118 bpm"],["Marker-B (lab)","4.8 (high)"],["O₂ saturation","94 %"]],
+     sym:["Fever 3 days","Persistent cough","Fatigue"],
+     cls:"high", verdict:"High risk of Disease X", score:84, lo:77, hi:90,
+     rangeTxt:"Estimated risk <b>84%</b> (likely range 77–90%). Range is narrow: the AI is fairly confident.",
+     factors:[["Marker-B elevated",90,"up"],["Fever ≥ 3 days",70,"up"],["Age group: child (higher base rate)",45,"up"],["Normal chest exam",20,"down"]],
+     perf:[["Children (this patient)","92%","88%",1],["Adults 18–64","90%","71%"],["Adults 65+","71%","64%"]],
+     alerts:[["ok","✓ Inputs complete and within the range the AI was trained on.","All required data are present and this patient group is well represented in the training data."]],
+     mini:"High risk · 84%",
+     opts:[["confirm","Order confirmatory test","Recommended next step for high-risk results"],["treat","Order test and start precautionary treatment","Requires your reasoning"],["none","No test — disagree with AI","Requires your reasoning"]],
+     comm:"Explain that the screening suggests elevated risk and a confirmatory test is needed. Avoid saying the patient \"has\" Disease X."
+   },
+ 2:{ name:"Ana R.", meta:"Patient #A-2217 · Female · Age group: adult (18–64)",
+     data:[["Temperature","37.6 °C"],["Heart rate","92 bpm"],["Marker-B (lab)","<span class='missing'>Missing — not yet resulted</span>"],["O₂ saturation","97 %"]],
+     sym:["Mild cough","Fatigue"],
+     cls:"unc", verdict:"Inconclusive — AI cannot decide", score:52, lo:31, hi:72,
+     rangeTxt:"Estimated risk <b>52%</b>, but the likely range is very wide (<b>31–72%</b>) and crosses both thresholds. The AI does <b>not</b> give a high/low label here.",
+     factors:[["Fatigue + mild cough",40,"up"],["Mild temperature",30,"up"],["Marker-B missing (estimated)",50,"up"],["Normal O₂ saturation",35,"down"]],
+     perf:[["Children","92%","88%"],["Adults 18–64 (this patient)","90%","71%",1],["Adults 65+","71%","64%"]],
+     alerts:[["unc","⚠ Uncertain result — your judgment is needed","Marker-B, the strongest input, is missing, so the AI estimated it. The AI recommends waiting for the lab or ordering the confirmatory test rather than relying on this score."]],
+     mini:"Inconclusive · 52% (31–72%)",
+     opts:[["wait","Wait for Marker-B result, then re-run AI","Recommended when key data are missing"],["confirm","Order confirmatory test now",""],["none","No further testing","Requires your reasoning"]],
+     comm:"Explain that the screening result is not clear yet and what the next step is. Do not present the score as a result."
+   },
+ 3:{ name:"Rosa G.", meta:"Patient #A-3090 · Female · Age group: adult 65+",
+     data:[["Temperature","38.4 °C"],["Heart rate","110 bpm"],["Marker-B (lab)","2.1 (borderline)"],["O₂ saturation","91 %"]],
+     sym:["Fever 4 days","Shortness of breath","Confusion (new)","Persistent cough"],
+     cls:"low", verdict:"Low risk of Disease X", score:22, lo:12, hi:38,
+     rangeTxt:"Estimated risk <b>22%</b> (likely range 12–38%).",
+     factors:[["Marker-B only borderline",60,"down"],["Age group: 65+ (lower base rate)",40,"down"],["Fever ≥ 3 days",45,"up"],["Low O₂ saturation",35,"up"]],
+     perf:[["Children","92%","88%"],["Adults 18–64","90%","71%"],["Adults 65+ (this patient)","<span class='flag'>71% ▼</span>","64%",1]],
+     alerts:[["warn","⚑ Lower reliability for this patient group","Adults 65+ were only 6% of the training data. In validation the AI <b>missed about 3 in 10</b> sick patients in this group (vs. 1 in 10 overall). Older adults often show atypical markers."],
+             ["unc","⚠ Result conflicts with recorded symptoms","New confusion and O₂ 91% are not used by the model but are documented. A low-risk score should not rule out Disease X here."]],
+     mini:"Low risk · 22% — reliability warning",
+     opts:[["confirm","Override AI — order confirmatory test","Your judgment takes priority"],["agree","Agree with AI — no test","Requires acknowledgement of the reliability warning"],["refer","Escalate / urgent evaluation","For worsening or atypical presentation"]],
+     comm:"If testing, explain the screening tool may be less accurate for her age group, which is why the clinician ordered a test."
+   }
+};
+let cur=1, choice=null;
+
+function bars(f){return f.map(([t,w,d])=>`<div class="factor"><div class="w"><div class="bar ${d}" style="width:${w}%"></div></div>${t}</div>`).join("")}
+function render(){
+  const s=S[cur];
+  document.querySelectorAll(".proto-bar button").forEach(b=>b.classList.toggle("on",+b.dataset.s===cur));
+  pName.textContent=s.name; pMeta.textContent=s.meta;
+  pData.innerHTML=s.data.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("");
+  pSymptoms.innerHTML="<div style='font-size:13px;color:var(--muted);margin-bottom:4px'>Recorded symptoms</div>"+s.sym.map(x=>`<span class="tag">${x}</span>`).join("");
+  result.className="result "+s.cls; verdict.textContent=s.verdict;
+  range.style.left=s.lo+"%"; range.style.width=(s.hi-s.lo)+"%";
+  pt.style.left=s.score+"%"; ptLbl.textContent=s.score+"%";
+  rangeTxt.innerHTML=s.rangeTxt; factors.innerHTML=bars(s.factors);
+  perf.innerHTML="<tr><th>Group</th><th>Catches</th><th>Correct when flagged</th></tr>"+s.perf.map(r=>`<tr class="${r[3]?'me':''}"><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("");
+  alerts.innerHTML=s.alerts.map(([c,t,d])=>`<div class="alert ${c}"><span class="t">${t}</span>${d}</div>`).join("");
+  // screen 2
+  mini.className="ai-mini "+s.cls; miniV.textContent=s.mini;
+  pName2.textContent=s.name; pMeta2.textContent=s.meta;
+  miniAlerts.innerHTML=s.alerts.filter(a=>a[0]!=="ok").map(([c,t])=>`<div class="alert ${c}" style="margin-top:8px;padding:8px 10px">${t}</div>`).join("");
+  opts.innerHTML=s.opts.map(([v,t,sub],i)=>`<label class="opt" data-v="${v}"><input type="radio" name="d" value="${v}"><div><b>${t}</b>${sub?`<small>${sub}</small>`:""}</div></label>`).join("");
+  opts.querySelectorAll(".opt").forEach(o=>o.addEventListener("click",()=>{choice=o.dataset.v;opts.querySelectorAll(".opt").forEach(x=>x.classList.toggle("sel",x===o));o.querySelector("input").checked=true;updateReq();}));
+  comm.textContent=s.comm;
+  choice=null; why.value=""; checks.innerHTML=""; reqTxt.textContent="(optional)"; reqTxt.style.color="var(--muted)";
+  flagMsg.classList.add("hidden"); form.style.display=""; summary.classList.remove("on");
+  validate();
+}
+function needsWhy(){
+  const s=S[cur]; const opt=s.opts.find(o=>o[0]===choice);
+  return !!(opt && /reasoning|acknowledg/i.test(opt[2])) || (cur===3 && choice) || (cur===2 && choice==="none");
+}
+function updateReq(){
+  reqTxt.textContent=needsWhy()?"* required for this decision":"(optional)"; reqTxt.style.color=needsWhy()?"":"var(--muted)";
+  let c="";
+  if(cur===3 && choice==="agree") c+=`<label class="chk"><input type="checkbox" id="ack" onchange="validate()"> I have reviewed the lower-reliability warning for adults 65+ and the conflicting symptoms.</label>`;
+  if(cur===2 && choice!=="wait" && choice) c+=`<label class="chk"><input type="checkbox" id="ack" onchange="validate()"> I understand this decision is made without the Marker-B result.</label>`;
+  checks.innerHTML=c; validate();
+}
+function validate(){
+  const ack=document.getElementById("ack");
+  let ok=!!choice;
+  if(needsWhy() && why.value.trim().length<5) ok=false;
+  if(ack && !ack.checked) ok=false;
+  submit.disabled=!ok;
+}
+document.addEventListener("input",e=>{if(e.target.id==="why")validate()});
+function go(n){
+  screen1.classList.toggle("hidden",n!==1); screen2.classList.toggle("hidden",n!==2);
+  st1.classList.toggle("on",n===1); st2.classList.toggle("on",n===2); window.scrollTo(0,0);
+}
+function flagIssue(){flagMsg.classList.remove("hidden")}
+function submitDecision(){
+  const s=S[cur]; const opt=s.opts.find(o=>o[0]===choice);
+  const agrees = (cur===1&&choice==="confirm")||(cur===3&&choice==="agree")||(cur===2&&choice==="wait");
+  sumTitle.textContent=opt[1];
+  sumData.innerHTML=`<dt>Patient</dt><dd>${s.name}</dd><dt>AI suggestion</dt><dd>${s.mini}</dd><dt>Clinician decision</dt><dd>${opt[1]}</dd><dt>Agreement</dt><dd>${agrees?"Consistent with AI suggestion":"<b>Clinician override</b> — logged for review"}</dd><dt>Reasoning</dt><dd>${why.value.trim()||"—"}</dd><dt>Signed</dt><dd>Dr. (demo user) · ${new Date().toLocaleString()}</dd>`;
+  form.style.display="none"; summary.classList.add("on");
+}
+function reset(){render();go(1)}
+document.querySelectorAll(".proto-bar button").forEach(b=>b.addEventListener("click",()=>{cur=+b.dataset.s;render();go(1)}));
+render();
+</script>
+</body>
+</html>
